@@ -899,27 +899,27 @@ class TradingProcessor:
         large_range = total_range > prev_total_range * 1.5
         
         # Doji (дожи) - свеча с очень маленьким телом
-        doji = small_body & (total_range > self.eps) # 107
+        doji = small_body & (total_range > self.eps) # 128
         features.append(doji.float())
         
         # Marubozu (марубозу) - свеча без теней или с очень маленькими тенями
-        marubozu = large_body & (upper_shadow + lower_shadow < total_range * 0.1) # 108
+        marubozu = large_body & (upper_shadow + lower_shadow < total_range * 0.1) # 129
         features.append(marubozu.float())
         
         # Hammer (молот) - длинная нижняя тень, маленькое тело в верхней части
-        hammer = (lower_shadow > body * 2) & (upper_shadow < body * 0.5) & (close > open_p) # 109
+        hammer = (lower_shadow > body * 2) & (upper_shadow < body * 0.5) & (close > open_p) # 130
         features.append(hammer.float())
         
         # Hanging Man (повешенный) - длинная нижняя тень, маленькое тело в верхней части, но в downtrend
-        hanging_man = (lower_shadow > body * 2) & (upper_shadow < body * 0.5) & (close < open_p) # 110
+        hanging_man = (lower_shadow > body * 2) & (upper_shadow < body * 0.5) & (close < open_p) # 131
         features.append(hanging_man.float())
         
         # Inverted Hammer (перевернутый молот)
-        inverted_hammer = (upper_shadow > body * 2) & (lower_shadow < body * 0.5) & (close > open_p) # 111
+        inverted_hammer = (upper_shadow > body * 2) & (lower_shadow < body * 0.5) & (close > open_p) # 132
         features.append(inverted_hammer.float())
         
         # Shooting Star (падающая звезда)
-        shooting_star = (upper_shadow > body * 2) & (lower_shadow < body * 0.5) & (close < open_p) # 112
+        shooting_star = (upper_shadow > body * 2) & (lower_shadow < body * 0.5) & (close < open_p) # 133
         features.append(shooting_star.float())
         
         # Bullish Engulfing (бычье поглощение)
@@ -928,7 +928,7 @@ class TradingProcessor:
         # Исправление: заполняем начальные значения
         prev_open[:, 0] = open_p[:, 0]
         prev_close[:, 0] = close[:, 0]
-        bullish_engulfing = (close > open_p) & (prev_close < prev_open) & (close > prev_open) & (open_p < prev_close) # 113
+        bullish_engulfing = (close > open_p) & (prev_close < prev_open) & (close > prev_open) & (open_p < prev_close) # 134
         features.append(bullish_engulfing.float())
         
         # Bearish Engulfing (медвежье поглощение)
@@ -937,14 +937,14 @@ class TradingProcessor:
         prev_close_bear = torch.roll(close, shifts=1, dims=1)
         prev_open_bear[:, 0] = open_p[:, 0]
         prev_close_bear[:, 0] = close[:, 0]
-        bearish_engulfing = (close < open_p) & (prev_close_bear > prev_open_bear) & (close < prev_open_bear) & (open_p > prev_close_bear) # 114
+        bearish_engulfing = (close < open_p) & (prev_close_bear > prev_open_bear) & (close < prev_open_bear) & (open_p > prev_close_bear) # 135
         features.append(bearish_engulfing.float())
         
         # Tweezer Tops (вершины-пинцеты)
         prev_high = torch.roll(high, shifts=1, dims=1)
         # Исправление: заполняем начальное значение
         prev_high[:, 0] = high[:, 0]
-        tweezer_tops = (torch.abs(high - prev_high) < self.eps) & (close < open_p) & (torch.roll(close, shifts=1, dims=1) > torch.roll(open_p, shifts=1, dims=1)) # 115
+        tweezer_tops = (torch.abs(high - prev_high) < self.eps) & (close < open_p) & (torch.roll(close, shifts=1, dims=1) > torch.roll(open_p, shifts=1, dims=1)) # 136
         # Исправление: заполняем начальное значение
         tweezer_tops[:, 0] = 0
         features.append(tweezer_tops.float())
@@ -953,7 +953,7 @@ class TradingProcessor:
         prev_low = torch.roll(low, shifts=1, dims=1)
         # Исправление: заполняем начальное значение
         prev_low[:, 0] = low[:, 0]
-        tweezer_bottoms = (torch.abs(low - prev_low) < self.eps) & (close > open_p) & (torch.roll(close, shifts=1, dims=1) < torch.roll(open_p, shifts=1, dims=1)) # 116
+        tweezer_bottoms = (torch.abs(low - prev_low) < self.eps) & (close > open_p) & (torch.roll(close, shifts=1, dims=1) < torch.roll(open_p, shifts=1, dims=1)) # 137
         # Исправление: заполняем начальное значение
         tweezer_bottoms[:, 0] = 0
         features.append(tweezer_bottoms.float())
@@ -968,7 +968,7 @@ class TradingProcessor:
             (prev_prev_close > torch.roll(open_p, shifts=2, dims=1)) &
             (close > torch.roll(close, shifts=1, dims=1)) & 
             (torch.roll(close, shifts=1, dims=1) > prev_prev_close)
-        ) # 117
+        ) # 138
         # Исправление: заполняем начальные значения
         three_white_soldiers[:, :2] = 0
         features.append(three_white_soldiers.float())
@@ -983,7 +983,7 @@ class TradingProcessor:
             (prev_prev_close_black < torch.roll(open_p, shifts=2, dims=1)) &
             (close < torch.roll(close, shifts=1, dims=1)) & 
             (torch.roll(close, shifts=1, dims=1) < prev_prev_close_black)
-        ) # 118
+        ) # 139
         # Исправление: заполняем начальные значения
         three_black_crows[:, :2] = 0
         features.append(three_black_crows.float())
@@ -1003,7 +1003,7 @@ class TradingProcessor:
             (torch.abs(torch.roll(close, shifts=1, dims=1) - prev_open_morning) < (prev_high_morning - prev_low_morning) * 0.3) & # Второй - дожи
             (close > open_p) & # Третий - бычья свеча
             (close > (prev_prev_close_morning + torch.roll(open_p, shifts=2, dims=1)) / 2) # Закрытие третьей свечи выше середины первой
-        ) # 119
+        ) # 140
         # Исправление: заполняем начальные значения
         morning_star[:, :2] = 0
         features.append(morning_star.float())
@@ -1023,7 +1023,7 @@ class TradingProcessor:
             (torch.abs(torch.roll(close, shifts=1, dims=1) - prev_open_evening) < (prev_high_evening - prev_low_evening) * 0.3) & # Второй - дожи
             (close < open_p) & # Третий - медвежья свеча
             (close < (prev_prev_close_evening + torch.roll(open_p, shifts=2, dims=1)) / 2) # Закрытие третьей свечи ниже середины первой
-        ) # 120
+        ) # 141
         # Исправление: заполняем начальные значения
         evening_star[:, :2] = 0
         features.append(evening_star.float())
@@ -1042,7 +1042,7 @@ class TradingProcessor:
             (open_p < prev_low_piercing) & # Открытие второй ниже минимума первой
             (close > (prev_close_piercing + prev_open_piercing) / 2) & # Закрытие второй выше середины первой
             (close < prev_open_piercing) # Но закрытие второй ниже открытия первой
-        ) # 121
+        ) # 142
         # Исправление: заполняем начальное значение
         piercing_line[:, 0] = 0
         features.append(piercing_line.float())
@@ -1061,7 +1061,7 @@ class TradingProcessor:
             (open_p > prev_high_dark) & # Открытие второй выше максимума первой
             (close < (prev_close_dark + prev_open_dark) / 2) & # Закрытие второй ниже середины первой
             (close > prev_open_dark) # Но закрытие второй выше открытия первой
-        ) # 122
+        ) # 143
         # Исправление: заполняем начальное значение
         dark_cloud_cover[:, 0] = 0
         features.append(dark_cloud_cover.float())
@@ -1071,7 +1071,7 @@ class TradingProcessor:
         prev_low_inside = torch.roll(low, shifts=1, dims=1)
         prev_high_inside[:, 0] = high[:, 0]
         prev_low_inside[:, 0] = low[:, 0]
-        inside_bar = (high < prev_high_inside) & (low > prev_low_inside) # 123
+        inside_bar = (high < prev_high_inside) & (low > prev_low_inside) # 144
         inside_bar[:, 0] = 0
         features.append(inside_bar.float())
         
@@ -1080,7 +1080,7 @@ class TradingProcessor:
         prev_low_outside = torch.roll(low, shifts=1, dims=1)
         prev_high_outside[:, 0] = high[:, 0]
         prev_low_outside[:, 0] = low[:, 0]
-        outside_bar = (high > prev_high_outside) & (low < prev_low_outside) # 124
+        outside_bar = (high > prev_high_outside) & (low < prev_low_outside) # 145
         outside_bar[:, 0] = 0
         features.append(outside_bar.float())
         
@@ -1092,23 +1092,62 @@ class TradingProcessor:
         harami = (
             (torch.maximum(open_p, close) < torch.maximum(prev_open_harami, prev_close_harami)) &
             (torch.minimum(open_p, close) > torch.minimum(prev_open_harami, prev_close_harami))
-        ) # 125
+        ) # 146
         harami[:, 0] = 0
         features.append(harami.float())
         
         # Gap Up (разрыв вверх)
         prev_close_gap = torch.roll(close, shifts=1, dims=1)
         prev_close_gap[:, 0] = close[:, 0]
-        gap_up = (torch.minimum(open_p, close) > prev_close_gap) # 126
+        gap_up = (torch.minimum(open_p, close) > prev_close_gap) # 147
         gap_up[:, 0] = 0
         features.append(gap_up.float())
         
         # Gap Down (разрыв вниз)
         prev_close_gap_down = torch.roll(close, shifts=1, dims=1)
         prev_close_gap_down[:, 0] = close[:, 0]
-        gap_down = (torch.maximum(open_p, close) < prev_close_gap_down) # 127
+        gap_down = (torch.maximum(open_p, close) < prev_close_gap_down) # 148
         gap_down[:, 0] = 0
         features.append(gap_down.float())
+        
+        # ========= НОВЫЕ ПАТТЕРНЫ =========
+        
+        # 1. Spinning Top (волчок) - маленькое тело, длинные тени
+        spinning_top = small_body & (upper_shadow > body) & (lower_shadow > body) # 149
+        features.append(spinning_top.float())
+        
+        # 2. Dragonfly Doji (дожи-стрекоза) - открытие/закрытие/максимум на одном уровне, длинная нижняя тень
+        dragonfly_doji = small_body & (upper_shadow < body * 0.1) & (lower_shadow > body * 2) # 150
+        features.append(dragonfly_doji.float())
+        
+        # 3. Gravestone Doji (дожи-надгробие) - открытие/закрытие/минимум на одном уровне, длинная верхняя тень
+        gravestone_doji = small_body & (lower_shadow < body * 0.1) & (upper_shadow > body * 2) # 151
+        features.append(gravestone_doji.float())
+        
+        # 4. Long Lower Shadow (длинная нижняя тень) - свеча с длинной нижней тенью
+        long_lower_shadow = lower_shadow > (upper_shadow + body) * 1.5 # 152
+        features.append(long_lower_shadow.float())
+        
+        # 5. Long Upper Shadow (длинная верхняя тень) - свеча с длинной верхней тенью
+        long_upper_shadow = upper_shadow > (lower_shadow + body) * 1.5 # 153
+        features.append(long_upper_shadow.float())
+        
+        # 6. Price Action Context - направление движения за последние 3 дня
+        # Это не классический свечной паттерн, а полезный признак для прогнозирования
+        prev_close_1 = torch.roll(close, shifts=1, dims=1)
+        prev_close_2 = torch.roll(close, shifts=2, dims=1)
+        prev_close_1[:, 0] = close[:, 0]
+        prev_close_2[:, :2] = close[:, :2]
+        
+        # Тренд за последние 3 дня: 1 - восходящий, -1 - нисходящий, 0 - боковой
+        short_trend = torch.sign(
+            (close - prev_close_1) + 
+            (prev_close_1 - prev_close_2) + 
+            (torch.roll(close, shifts=-1, dims=1) - close)
+        ) # 154
+        short_trend[:, 0] = 0
+        short_trend[:, -1] = 0
+        features.append(short_trend)
         
         return features
 
