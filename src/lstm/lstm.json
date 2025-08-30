@@ -1,0 +1,14 @@
+{
+  "model_type": "TradingLSTM",
+  "feature_size": 128,
+  "encoder_hidden_size": 256,
+  "encoder_num_layers": 2,
+  "decoder_hidden_size": 256,
+  "decoder_num_layers": 2,
+  "attention_dim": 128,
+  "target_len": 32,
+  "dropout": 0.2,
+  "teacher_forcing_ratio": 0.5,
+  "bidirectional_encoder": true,
+  "use_layer_norm": true
+}
