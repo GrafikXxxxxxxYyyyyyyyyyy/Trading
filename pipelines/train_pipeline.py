@@ -22,6 +22,7 @@ class TradingTrainingArgs:
     adam_epsilon: float = 1e-08
     adam_weight_decay: float = 1e-2
     dataloader_num_workers: int = 0
+    save_steps: int = 500
 
 
 
@@ -82,16 +83,18 @@ class TradingTrainer:
 
 
         # 5. Training loop
+        progress_bar = tqdm(
+            train_dataloader,
+            desc="batch loss",
+            total=len(train_dataloader) * self.args.num_train_epochs,
+        )
+        global_step = 0
         for epoch in range(self.args.num_train_epochs):
             for step, batch in enumerate(train_dataloader):
                 target = batch['target'].to(self.model.device)
                 history = batch['history']
-
-                # Получаем расширенный набор фичей
-                processed_history = self.model.processor(history).to(self.model.device)
-
-                # Предсказываем прогноз моделью
-                model_pred = self.model(processed_history)
+                
+                model_pred = self.model(history, target)
 
                 loss = F.mse_loss(model_pred.float(), target.float(), reduction="mean")
 
@@ -99,6 +102,11 @@ class TradingTrainer:
                 optimizer.step()
                 optimizer.zero_grad()
 
-                print(f"Epoch: {epoch+1} | Step: {step+1} | Loss: {loss.detach().item()}")
+                global_step += 1
+                
+                progress_bar.update(1)
+                progress_bar.set_postfix({'loss': f'{loss.detach().item():.6f}'})
+                # print(f"Epoch: {epoch+1} | Step: {step+1} | Loss: {loss.detach().item()}")
 
-            self.model.save_pretrained(dir_path=self.args.output_dir)
+                if global_step > 0 and global_step % self.args.save_steps == 0:
+                    self.model.save_pretrained(dir_path=self.args.output_dir)

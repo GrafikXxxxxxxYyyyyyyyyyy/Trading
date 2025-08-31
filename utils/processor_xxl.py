@@ -1,4 +1,3 @@
-# utils/processor_xxl.py
 import torch
 import torch.nn.functional as F
 
@@ -1245,5 +1244,8 @@ class TradingProcessor:
 
         # Конкатенируем по последней размерности
         processed_data = torch.cat(aligned_features, dim=-1) # [B, T, num_features]
+        if not torch.isfinite(processed_data).all():
+            print(f"Предупреждение: Найдены NaN или Inf в финальных признаках. Заменяем на 0.")
+            processed_data = torch.nan_to_num(processed_data, nan=0.0, posinf=0.0, neginf=0.0)
         
         return processed_data

@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -81,5 +82,101 @@ def plot_dataset_sample(sample):
     # Устанавливаем пределы оси X для второго графика (только история)
     plt.xlim(0, history_len + target_len - 1)
 
+    plt.tight_layout()
+    plt.show()
+
+
+
+def plot_model_prediction(history, target, prediction, ticker_name="Unknown"):
+    """
+    Отрисовывает на одном графике исторические цены, таргет и прогноз модели.
+
+    Args:
+        history (torch.Tensor or np.ndarray): Исторические данные.
+                                          Формат: [B, T_hist, 5] или [T_hist, 5].
+                                          Предполагается, что последний канал - Close price (индекс 3).
+        target (torch.Tensor or np.ndarray): Целевые значения.
+                                       Формат: [B, T_pred, 1] или [T_pred, 1].
+        prediction (torch.Tensor or np.ndarray): Прогнозы модели.
+                                           Формат: [B, T_pred, 1] или [T_pred, 1].
+        ticker_name (str, optional): Название тикера для заголовка графика. Defaults to "Unknown".
+    """
+    # --- 1. Обработка входных данных ---
+    # Преобразуем в numpy, если нужно, и снимаем с градиентного графа
+    if isinstance(history, torch.Tensor):
+        history_np = history.detach().cpu().numpy()
+    else:
+        history_np = np.array(history)
+
+    if isinstance(target, torch.Tensor):
+        target_np = target.detach().cpu().numpy()
+    else:
+        target_np = np.array(target)
+
+    if isinstance(prediction, torch.Tensor):
+        prediction_np = prediction.detach().cpu().numpy()
+    else:
+        prediction_np = np.array(prediction)
+
+    # Обработка размерностей (удаление размерности батча, если она 1 или равна 1)
+    # Предполагаем, что если размерность 3, то первая - батч, и мы берем первый элемент.
+    if history_np.ndim == 3:
+        history_np = history_np[0] # [T_hist, 5]
+    if target_np.ndim == 3:
+        target_np = target_np[0]   # [T_pred, 1]
+    if prediction_np.ndim == 3:
+        prediction_np = prediction_np[0] # [T_pred, 1]
+
+    # Проверка базовых форматов
+    if history_np.ndim != 2 or history_np.shape[1] < 4:
+        raise ValueError("history должен быть 2D массивом с минимум 4 колонками (последняя - Close)")
+    if target_np.ndim != 2 or target_np.shape[1] != 1:
+        raise ValueError("target должен быть 2D массивом с 1 колонкой")
+    if prediction_np.ndim != 2 or prediction_np.shape[1] != 1:
+        raise ValueError("prediction должен быть 2D массивом с 1 колонкой")
+    if target_np.shape[0] != prediction_np.shape[0]:
+        raise ValueError("target и prediction должны иметь одинаковую длину по временной оси")
+
+    # --- 2. Извлечение данных для графика ---
+    T_hist = history_np.shape[0]
+    T_pred = target_np.shape[0]
+
+    # Исторические цены закрытия
+    historical_closes = history_np[:, 3] # Индекс 3 для Close
+
+    # Таргет и прогноз (снимаем размерность канала)
+    target_values = target_np.squeeze(-1) # [T_pred]
+    predicted_values = prediction_np.squeeze(-1) # [T_pred]
+
+    # Создаем ось X для каждого набора данных
+    # История: от 0 до T_hist-1
+    # Таргет и прогноз: от T_hist до T_hist + T_pred - 1
+    # (предполагаем, что таргет и прогноз идут сразу после истории)
+    x_history = np.arange(T_hist)
+    x_target_pred = np.arange(T_hist, T_hist + T_pred)
+
+    # --- 3. Построение графика ---
+    plt.figure(figsize=(12, 6))
+
+    # Исторические цены (черные)
+    plt.plot(x_history, historical_closes, label='Historical Close', color='black', linewidth=1)
+
+    # Таргет (зеленый)
+    plt.plot(x_target_pred, target_values, label='Target', color='green', linewidth=1)
+
+    # Прогноз (красный)
+    plt.plot(x_target_pred, predicted_values, label='Prediction', color='red', linewidth=1)
+
+    # Вертикальная линия, разделяющая историю и прогноз
+    plt.axvline(x=T_hist-1, color='gray', linestyle='--', linewidth=0.8, alpha=0.7)
+
+    # Настройки графика
+    plt.xlabel('Time Steps')
+    plt.ylabel('Price (Close)')
+    plt.title(f'Model Prediction vs Target - {ticker_name}')
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.5)
+
+    # Отображение графика
     plt.tight_layout()
     plt.show()
