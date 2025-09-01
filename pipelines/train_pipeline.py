@@ -6,9 +6,13 @@ import torch.nn.functional as F
 from typing import Any, Optional, Union, Dict
 from dataclasses import dataclass
 
+# --- Добавлено для TensorBoard ---
+from torch.utils.tensorboard import SummaryWriter
+import time
+# --- --- ---
+
 from models.model_wrapper import TradingModel
 from utils.dataset import TradingDataset
-
 
 
 @dataclass
@@ -23,7 +27,9 @@ class TradingTrainingArgs:
     adam_weight_decay: float = 1e-2
     dataloader_num_workers: int = 0
     save_steps: int = 500
-
+    # --- Добавлено для TensorBoard ---
+    tensorboard_log_dir: str = "runs/trading_experiment" # Директория для логов TensorBoard
+    # --- --- ---
 
 
 class TradingTrainer:
@@ -36,17 +42,31 @@ class TradingTrainer:
         self.model = model
         self.args = args
         self.dataset = train_dataset
-
+        # --- Добавлено для TensorBoard ---
+        self.writer: Optional[SummaryWriter] = None
+        # --- --- ---
 
     def train(self):
+        # --- Добавлено для TensorBoard: Инициализация SummaryWriter ---
+        if self.args.tensorboard_log_dir:
+            try:
+                # Создаём уникальное имя запуска на основе времени
+                timestamp = str(int(time.time()))
+                run_name = f"run_{timestamp}"
+                full_log_dir = os.path.join(self.args.tensorboard_log_dir, run_name)
+                self.writer = SummaryWriter(log_dir=full_log_dir)
+                print(f"Инициализирован TensorBoard логгер. Логи будут сохранены в {full_log_dir}")
+            except Exception as e:
+                print(f"Не удалось инициализировать TensorBoard: {e}. Логирование отключено.")
+                self.writer = None
+        # --- --- ---
+
         # 1. Создаём директорию проекта
         if self.args.output_dir is not None:
             os.makedirs(self.args.output_dir, exist_ok=True)
 
-
         # 2. Включаем обучение параметров трансформера
         self.model.train()
-
 
         # 3. Initialize the optimizer
         optimizer = torch.optim.AdamW(
@@ -56,7 +76,6 @@ class TradingTrainer:
             weight_decay=self.args.adam_weight_decay,
             eps=self.args.adam_epsilon,
         )
-
 
         # 4. DataLoaders creation:
         def collate_fn(example):
@@ -80,7 +99,6 @@ class TradingTrainer:
             batch_size=self.args.train_batch_size,
             num_workers=self.args.dataloader_num_workers,
         )
-
 
         # 5. Training loop
         progress_bar = tqdm(
@@ -106,7 +124,27 @@ class TradingTrainer:
                 
                 progress_bar.update(1)
                 progress_bar.set_postfix({'loss': f'{loss.detach().item():.6f}'})
-                # print(f"Epoch: {epoch+1} | Step: {step+1} | Loss: {loss.detach().item()}")
+
+                # --- Добавлено для TensorBoard: Логирование метрики ---
+                if self.writer is not None:
+                    try:
+                        self.writer.add_scalar("Loss/train", loss.detach().item(), global_step)
+                    except Exception as log_e:
+                        print(f"Ошибка при логировании в TensorBoard на шаге {global_step}: {log_e}")
+                # --- --- ---
 
                 if global_step > 0 and global_step % self.args.save_steps == 0:
                     self.model.save_pretrained(dir_path=self.args.output_dir)
+                
+        # --- Добавлено для TensorBoard: Закрытие SummaryWriter ---
+        if self.writer is not None:
+            try:
+                self.writer.close()
+                print(f"TensorBoard логгер закрыт. Логи сохранены в {self.args.tensorboard_log_dir}")
+            except Exception as e:
+                print(f"Ошибка при закрытии TensorBoard логгера: {e}")
+        # --- --- ---
+
+        # Сохраняем модель в конце обучения
+        self.model.save_pretrained(dir_path=self.args.output_dir)
+        print(f"Обучение завершено. Модель сохранена в {self.args.output_dir}")

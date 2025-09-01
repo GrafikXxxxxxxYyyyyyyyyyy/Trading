@@ -237,5 +237,10 @@ class TradingModel:
     def __call__(self, history, target=None):
         # Расширяем признаковое пространство [B, 256, 5] -> [B, 256, 128]
         processed_history = self.processor(history).to(self.device)
+        
+        # Проверяем что нет NaN значений в таргете
+        if target is not None and not torch.isfinite(target).all():
+            print(f"Предупреждение: Найдены NaN или Inf в финальных признаках. Заменяем на 0.")
+            target = torch.nan_to_num(target, nan=0.0, posinf=0.0, neginf=0.0)
 
         return self.model(processed_history, target)
