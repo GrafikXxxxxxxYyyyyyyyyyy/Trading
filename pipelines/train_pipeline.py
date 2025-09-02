@@ -15,6 +15,7 @@ from models.model_wrapper import TradingModel
 from utils.dataset import TradingDataset
 
 
+
 @dataclass
 class TradingTrainingArgs:
     train_batch_size: int = 8
@@ -52,7 +53,7 @@ class TradingTrainer:
             try:
                 # Создаём уникальное имя запуска на основе времени
                 timestamp = str(int(time.time()))
-                run_name = f"run_{timestamp}"
+                run_name = f"run_{timestamp}_{self.model.model_config['model_type']}"
                 full_log_dir = os.path.join(self.args.tensorboard_log_dir, run_name)
                 self.writer = SummaryWriter(log_dir=full_log_dir)
                 print(f"Инициализирован TensorBoard логгер. Логи будут сохранены в {full_log_dir}")
@@ -115,6 +116,7 @@ class TradingTrainer:
                 model_pred = self.model(history, target)
 
                 loss = F.mse_loss(model_pred.float(), target.float(), reduction="mean")
+                # loss = F.l1_loss(model_pred.float(), target.float(), reduction="mean")
 
                 loss.backward()
                 optimizer.step()
