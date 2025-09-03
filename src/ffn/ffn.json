@@ -1,0 +1,11 @@
+{
+  "model_type": "TradingFFN",
+  "feature_size": 256,
+  "hidden_sizes": [512, 1024, 512, 256],
+  "output_size": 32,
+  "seq_len": 256,
+  "num_attention_layers": 3,
+  "num_heads": 8,
+  "dropout": 0.2,
+  "use_layer_norm": true
+}

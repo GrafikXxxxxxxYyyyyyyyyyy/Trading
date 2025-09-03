@@ -1,0 +1,10 @@
+{
+  "model_type": "TradingTCN",
+  "feature_size": 256,
+  "num_channels": [64, 64, 64, 128, 128, 128, 256, 256, 512, 512],
+  "kernel_size": 3,
+  "dropout": 0.2,
+  "target_len": 32,
+  "use_layer_norm": true,
+  "use_weight_norm": true
+}

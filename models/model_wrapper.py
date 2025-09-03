@@ -6,8 +6,9 @@ from safetensors.torch import save_model, load_model
 from models.feature_extractor import TradingFeatureExtractor
 from src import (
     TradingFFN,
-    # TradingLSTM,
-    # TradingTCN,
+    TradingLSTM,
+    TradingLSTMFFN,
+    TradingTCN,
     # TradingCNN,
     # TradingTransformer,
     # TradingLSTM_FFN,
@@ -18,8 +19,9 @@ from src import (
 
 MODEL_REGISTRY = {
     "TradingFFN": TradingFFN,
-    # "TradingLSTM": TradingLSTM,
-    # "TradingTCN": TradingTCN,
+    "TradingLSTM": TradingLSTM,
+    "TradingLSTMFFN": TradingLSTMFFN,
+    "TradingTCN": TradingTCN,
     # "TradingCNN": TradingCNN,
     # "TradingTransformer": TradingTransformer,
     # "TradingLSTM_FFN": TradingLSTM_FFN,

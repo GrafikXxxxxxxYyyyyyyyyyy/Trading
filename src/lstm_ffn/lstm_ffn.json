@@ -1,0 +1,14 @@
+{
+  "model_type": "TradingLSTMFFN",
+  "feature_size": 256,
+  "history_len": 256,
+  "target_len": 32,
+  "lstm_hidden_size": 256,
+  "lstm_num_layers": 2,
+  "lstm_dropout": 0.2,
+  "ffn_hidden_dims": [1024, 512, 256],
+  "ffn_dropout": 0.2,
+  "use_layer_norm": true,
+  "use_bidirectional": true,
+  "num_attention_heads": 8
+}
