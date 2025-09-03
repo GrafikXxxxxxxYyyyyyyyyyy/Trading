@@ -1,0 +1,12 @@
+{
+  "model_type": "TradingCNN",
+  "feature_size": 256,
+  "cnn_channels": [64, 128, 256, 512],
+  "kernel_sizes": [3, 3, 3, 3],
+  "dilations": [1, 2, 4, 8],
+  "output_size": 32,
+  "dropout": 0.2,
+  "use_residual": true,
+  "use_dilated": true,
+  "use_attention": true
+}

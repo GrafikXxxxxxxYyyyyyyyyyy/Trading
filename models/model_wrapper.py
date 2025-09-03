@@ -7,12 +7,10 @@ from models.feature_extractor import TradingFeatureExtractor
 from src import (
     TradingFFN,
     TradingLSTM,
-    TradingLSTMFFN,
     TradingTCN,
-    # TradingCNN,
-    # TradingTransformer,
-    # TradingLSTM_FFN,
-    # TradingBERT,
+    TradingTFT,
+    TradingCNN,
+    TradingTransformer,
 )
 
 
@@ -20,12 +18,10 @@ from src import (
 MODEL_REGISTRY = {
     "TradingFFN": TradingFFN,
     "TradingLSTM": TradingLSTM,
-    "TradingLSTMFFN": TradingLSTMFFN,
     "TradingTCN": TradingTCN,
-    # "TradingCNN": TradingCNN,
-    # "TradingTransformer": TradingTransformer,
-    # "TradingLSTM_FFN": TradingLSTM_FFN,
-    # "TradingBERT": TradingBERT,
+    "TradingTFT": TradingTFT,
+    "TradingCNN": TradingCNN,
+    "TradingTransformer": TradingTransformer,
 }
 
 
