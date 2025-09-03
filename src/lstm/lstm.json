@@ -1,9 +1,9 @@
 {
   "model_type": "TradingLSTM",
   "feature_size": 256,
-  "encoder_hidden_size": 256,
+  "encoder_hidden_size": 512,
   "encoder_num_layers": 2,
-  "decoder_hidden_size": 256,
+  "decoder_hidden_size": 512,
   "decoder_num_layers": 2,
   "attention_dim": 128,
   "target_len": 32,

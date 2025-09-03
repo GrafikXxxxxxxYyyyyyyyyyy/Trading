@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 
-class BahdanauAttention(nn.Module):
+class Attention(nn.Module):
     def __init__(self):
         pass
 

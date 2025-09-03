@@ -79,7 +79,8 @@ class TradingTrainer:
         )
         
         # 3.1 Создаём функцию для оценки
-        loss_function = torch.nn.MSELoss()
+        # loss_function = torch.nn.MSELoss()
+        loss_function = torch.nn.HuberLoss()
 
         # 4. DataLoaders creation:
         def collate_fn(example):
