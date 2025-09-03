@@ -19,7 +19,7 @@ from utils.dataset import TradingDataset
 @dataclass
 class TradingTrainingArgs:
     train_batch_size: int = 8
-    output_dir: str = 'Trading-pretrained'
+    output_dir: str = 'pretrained-models'
     num_train_epochs: int = 1
     learning_rate: float = 1e-4
     adam_beta1: float = 0.9
@@ -77,6 +77,9 @@ class TradingTrainer:
             weight_decay=self.args.adam_weight_decay,
             eps=self.args.adam_epsilon,
         )
+        
+        # 3.1 Создаём функцию для оценки
+        loss_function = torch.nn.MSELoss()
 
         # 4. DataLoaders creation:
         def collate_fn(example):
@@ -111,12 +114,12 @@ class TradingTrainer:
         for epoch in range(self.args.num_train_epochs):
             for step, batch in enumerate(train_dataloader):
                 target = batch['target'].to(self.model.device)
-                history = batch['history']
+                history = batch['history'].to(self.model.device)
                 
                 model_pred = self.model(history, target)
 
-                loss = F.mse_loss(model_pred.float(), target.float(), reduction="mean")
-                # loss = F.l1_loss(model_pred.float(), target.float(), reduction="mean")
+                # loss = F.mse_loss(model_pred.float(), target.float(), reduction="mean")
+                loss = loss_function(model_pred.float(), target.float())
 
                 loss.backward()
                 optimizer.step()

@@ -211,5 +211,6 @@ __marimo__/
 .DS_Store
 
 /pretrained-models
+/pretrained-extractor
 
 /runs

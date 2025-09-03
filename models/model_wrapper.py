@@ -1,44 +1,58 @@
-import torch
 import os
 import json
-from safetensors.torch import save_model, load_model
+import torch
 
-from utils.processor_xxl import TradingProcessor
+from safetensors.torch import save_model, load_model
+from models.feature_extractor import TradingFeatureExtractor
 from src import (
-    TradingLSTM,
-    TradingTCN,
-    TradingCNN,
-    TradingTransformer,
-    TradingLSTM_FFN,
-    TradingBERT,
+    TradingFFN,
+    # TradingLSTM,
+    # TradingTCN,
+    # TradingCNN,
+    # TradingTransformer,
+    # TradingLSTM_FFN,
+    # TradingBERT,
 )
 
 
+
 MODEL_REGISTRY = {
-    "TradingLSTM": TradingLSTM,
-    "TradingTCN": TradingTCN,
-    "TradingCNN": TradingCNN,
-    "TradingTransformer": TradingTransformer,
-    "TradingLSTM_FFN": TradingLSTM_FFN,
-    "TradingBERT": TradingBERT,
+    "TradingFFN": TradingFFN,
+    # "TradingLSTM": TradingLSTM,
+    # "TradingTCN": TradingTCN,
+    # "TradingCNN": TradingCNN,
+    # "TradingTransformer": TradingTransformer,
+    # "TradingLSTM_FFN": TradingLSTM_FFN,
+    # "TradingBERT": TradingBERT,
 }
+
 
 
 class TradingModel:
     def __init__(
         self, 
-        device: str = "cpu"
+        device: str = "mps"
     ):
         self.device = device
-        self.processor = TradingProcessor()
         self.model: torch.nn.Module = None
         self.model_config: dict = None
 
+        # Создаём предобученный экстрактор признаков
+        self.feature_extractor = TradingFeatureExtractor(
+            input_size=5,
+            feature_size=256,
+        )
+        load_model(self.feature_extractor, 'pretrained-extractor/trading_feature_extractor.safetensors')
+        self.feature_extractor.to(device)
+        self.feature_extractor.eval()
+
+    
     def eval(self):
         if self.model is not None:
             self.model.eval()
         else:
             raise ValueError("Модель не инициализирована. Вызовите from_config или from_pretrained.")
+
 
     def train(self):
         if self.model is not None:
@@ -46,11 +60,21 @@ class TradingModel:
         else:
             raise ValueError("Модель не инициализирована. Вызовите from_config или from_pretrained.")
 
+
     def parameters(self):
         if self.model is not None:
             return self.model.parameters()
         else:
             raise ValueError("Модель не инициализирована. Вызовите from_config или from_pretrained.")
+        
+
+    def to(self, device):
+        self.device = device
+        self.feature_extractor.to(device)
+        if self.model is not None:
+            self.model.to(device)
+        return self
+        
 
     def save_pretrained(self, dir_path="pretrained-models"):
         """
@@ -88,6 +112,7 @@ class TradingModel:
 
         print(f"Модель {model_type} успешно сохранена в {model_dir_path}")
 
+    
     @classmethod
     def from_pretrained(cls, dir_path, device=None):
         """
@@ -157,7 +182,9 @@ class TradingModel:
             raise
 
         print(f"Модель {model_type} успешно загружена из {dir_path}")
+
         return model_wrapper
+    
 
     @classmethod
     def from_config(cls, config, device=None):
@@ -213,8 +240,19 @@ class TradingModel:
         # --- --- ---
             
         return model_wrapper
+    
 
     def __call__(self, history, target=None):
-        processed_history = self.processor(history).to(self.device)
+        """
+        Прогнозирование будущих цен.
+        
+        Args:
+            history (Tensor): Исторические данные [B, 256, 5] (OHLCV)
+            target (Tensor, optional): Целевые значения [B, 32, 1] (только Close)
+        
+        Returns:
+            Tensor: Прогноз [B, 32, 1]
+        """
+        enriched_history = self.feature_extractor.extract_features(history)
 
-        return self.model(processed_history, target)
+        return self.model(enriched_history, target)

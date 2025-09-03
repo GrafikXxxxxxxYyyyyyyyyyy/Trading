@@ -6,39 +6,6 @@ from tqdm import tqdm
 
 
 
-# def dummy_normalize_chunk(chunk, history_len):
-#     # # а. Берём последнюю цену закрытия 
-#     # anchor_close_price = chunk[history_len-1, 3]
-
-#     # б. Берём первую цену закрытия
-#     anchor_close_price = chunk[0, 3]
-
-#     new_chunk = np.zeros_like(chunk)
-#     new_chunk[:, :4] = (chunk[:, :4]  - anchor_close_price) + 1e-9 # добавка для того, чтобы избежать NaN 
-#     # Нормируем всё на последнее значение объёма (потому что первые могут быть нулём)
-#     new_chunk[:, 4] = chunk[:, 4] / (chunk[history_len-1, 4] + 1e-9)
-
-#     return new_chunk
-
-
-
-# def normalize_chunk(chunk, history_len):
-#     # # Берём последнюю в истории цену закрытия
-#     # last_close_price = chunk[history_len-1, 3]
-
-#     # Берём первую цену закрытия
-#     last_close_price = chunk[0, 3]
-
-#     new_chunk = np.zeros_like(chunk)
-#     # Нормализуем Open, High, Low, Close на последнюю цену
-#     new_chunk[:, :4] = ((chunk[:, :4] / last_close_price) - 1) + 1e-9 # добавка для того, чтобы избежать NaN 
-#     # Отдельно нормализуем объем
-#     new_chunk[:, 4] = chunk[:, 4] / (chunk[history_len-1, 4] + 1e-9)
-
-#     return new_chunk
-
-
-
 def normalize_chunk_zscore_full(chunk, history_len):
     """
     Нормализует цены и объемы с использованием среднего и стандартного отклонения 
@@ -121,10 +88,6 @@ def parse_single_ticker(
         normalized_chunk = normalize_chunk_zscore_full(chunk, history_len)
         normalized_history = normalized_chunk[:history_len]
         normalized_target = normalized_chunk[history_len:]
-
-        # # В текущей реализации попробую обучать модели без нормализации данных
-        # normalized_history = chunk[:history_len]
-        # normalized_target = chunk[history_len:]
         
         # Сохранение истории и таргета
         pd.DataFrame(normalized_history).to_csv(
@@ -141,10 +104,6 @@ def parse_single_ticker(
         normalized_chunk = normalize_chunk_zscore_full(chunk, history_len)
         normalized_history = normalized_chunk[:history_len]
         normalized_target = normalized_chunk[history_len:]
-
-        # # В текущей реализации попробую обучать модели без нормализации данных
-        # normalized_history = chunk[:history_len]
-        # normalized_target = chunk[history_len:]
         
         # Сохранение истории и таргета
         pd.DataFrame(normalized_history).to_csv(

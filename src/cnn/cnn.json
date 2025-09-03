@@ -1,8 +1,0 @@
-{
-  "model_type": "TradingCNN",
-  "feature_size": 128,
-  "target_len": 32,
-  "dropout": 0.2,
-  "use_layer_norm": true,
-  "resnet_layers": [3, 4, 23, 3]
-}
