@@ -180,3 +180,119 @@ def plot_model_prediction(history, target, prediction, ticker_name="Unknown"):
     # Отображение графика
     plt.tight_layout()
     plt.show()
+
+
+
+def plot_denormalized_sample(sample):
+    """
+    Отрисовывает денормализованные исторические данные и таргет.
+    
+    Args:
+        sample (dict): Словарь с ключами 'history', 'target', 'ticker', 'stats'.
+                       'history' и 'target' должны быть numpy массивами или torch тензорами.
+                       'stats' должен содержать статистики для денормализации.
+    """
+    # Извлекаем данные
+    history = sample['history']
+    target = sample['target']
+    ticker = sample['ticker']
+    stats = sample['stats']
+    
+    # Если данные в формате torch.Tensor, конвертируем в numpy
+    if hasattr(history, 'numpy'):
+        history = history.numpy()
+    if hasattr(target, 'numpy'):
+        target = target.numpy()
+    
+    # Денормализация
+    denorm_history, denorm_target = denormalize_sample(history, target, stats)
+    
+    # Создаем временную шкалу
+    history_len = denorm_history.shape[0]
+    target_len = denorm_target.shape[0]
+    history_time = np.arange(history_len)
+    target_time = np.arange(history_len, history_len + target_len)
+    
+    # Создаем график
+    plt.figure(figsize=(12, 6))
+    
+    # Отрисовка исторических данных (цены закрытия)
+    plt.plot(history_time, denorm_history[:, 3], label='Historical Close Price', color='black', linewidth=1)
+    plt.plot(history_time, denorm_history[:, 0], label='Historical Open Price', color='gray', linewidth=1)
+    plt.plot(history_time, denorm_history[:, 1], label='Historical High Price', color='darkgreen', linewidth=1)
+    plt.plot(history_time, denorm_history[:, 2], label='Historical Low Price', color='darkred', linewidth=1)
+    
+    # Отрисовка таргета (цены закрытия)
+    plt.plot(target_time, denorm_target[:, 0], label='Target Close Price', color='red', linewidth=1)
+    
+    # Настройка графика
+    plt.title(f'{ticker} - Denormalized Price Data')
+    plt.xlabel('Time Steps')
+    plt.ylabel('Price')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    
+    # Показываем график
+    plt.tight_layout()
+    plt.show()
+
+
+
+def denormalize_sample(history, target, stats):
+    """
+    Денормализует исторические данные и таргет.
+    
+    Args:
+        history (np.ndarray): Исторические данные формы [history_len, 5].
+        target (np.ndarray): Таргет данных формы [target_len, 1].
+        stats (dict): Статистики нормализации.
+        
+    Returns:
+        tuple: (denorm_history, denorm_target)
+    """
+    # Копируем данные, чтобы не изменять оригинальные
+    denorm_history = np.copy(history)
+    denorm_target = np.copy(target)
+    
+    # Индексы: 0=Open, 1=High, 2=Low, 3=Close, 4=Volume
+    price_indices = [0, 1, 2, 3]  # OHLC
+    
+    # Денормализация цен через лог-доходности
+    for i in price_indices:
+        # Получаем первую цену для восстановления
+        first_price = stats.get(f'first_price_{i}', 1.0)
+        
+        # Восстанавливаем цены из лог-доходностей
+        log_returns = denorm_history[:, i]
+        prices = np.zeros_like(log_returns)
+        prices[0] = first_price
+        
+        # Последовательное восстановление цен
+        for t in range(1, len(log_returns)):
+            # P_t = P_{t-1} * exp(r_t)
+            prices[t] = prices[t-1] * np.exp(log_returns[t])
+            
+        denorm_history[:, i] = prices
+    
+    # Денормализация таргета (цены закрытия)
+    first_close_price = stats.get('first_price_3', 1.0)
+    
+    # Для таргета нам нужно продолжить последовательность от последней цены в истории
+    last_close_price = denorm_history[-1, 3]  # Последняя цена закрытия в истории
+    target_log_returns = denorm_target[:, 0]
+    target_prices = np.zeros_like(target_log_returns)
+    target_prices[0] = last_close_price * np.exp(target_log_returns[0])
+    
+    for t in range(1, len(target_log_returns)):
+        target_prices[t] = target_prices[t-1] * np.exp(target_log_returns[t])
+        
+    denorm_target[:, 0] = target_prices
+    
+    # Денормализация объема
+    volume_mean = stats.get('volume_mean', 0.0)
+    volume_std = stats.get('volume_std', 1.0)
+    
+    # Обратное z-score преобразование
+    denorm_history[:, 4] = denorm_history[:, 4] * volume_std + volume_mean
+    
+    return denorm_history, denorm_target
