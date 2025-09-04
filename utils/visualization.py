@@ -200,9 +200,9 @@ def plot_denormalized_sample(sample):
     
     # Если данные в формате torch.Tensor, конвертируем в numpy
     if hasattr(history, 'numpy'):
-        history = history.numpy()
+        history = history.squeeze(0).numpy()
     if hasattr(target, 'numpy'):
-        target = target.numpy()
+        target = target.squeeze(0).numpy()
     
     # Денормализация
     denorm_history, denorm_target = denormalize_sample(history, target, stats)

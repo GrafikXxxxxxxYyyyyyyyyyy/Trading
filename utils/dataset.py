@@ -128,8 +128,8 @@ class TradingDataset(Dataset):
             
             # Формируем sample
             sample = {
-                'history': torch.from_numpy(history_data),        # [history_len, 5]
-                'target': torch.from_numpy(target_close_prices),  # [target_len, 1]
+                'history': torch.from_numpy(history_data).unsqueeze(0),        # [1, history_len, 5]
+                'target': torch.from_numpy(target_close_prices).unsqueeze(0),  # [1, target_len, 1]
                 'ticker': sample_info['ticker'],
                 'stats': stats  # Добавляем статистики
             }
