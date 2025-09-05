@@ -1,6 +1,7 @@
 import os
 import math
 import torch
+import torch.nn as nn
 from tqdm import tqdm
 import torch.nn.functional as F
 from typing import Any, Optional, Union, Dict
@@ -81,6 +82,7 @@ class TradingTrainer:
         # 3.1 Создаём функцию для оценки
         # loss_function = torch.nn.MSELoss()
         loss_function = torch.nn.HuberLoss()
+
 
         # 4. DataLoaders creation:
         def collate_fn(example):

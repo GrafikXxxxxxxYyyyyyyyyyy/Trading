@@ -240,7 +240,7 @@ def plot_denormalized_sample(sample):
 
 def denormalize_sample(history, target, stats):
     """
-    Денормализует исторические данные и таргет.
+    Денормализует исторические данные и таргет, используя статистики из нового нормализатора.
     
     Args:
         history (np.ndarray): Исторические данные формы [history_len, 5].
@@ -257,34 +257,56 @@ def denormalize_sample(history, target, stats):
     # Индексы: 0=Open, 1=High, 2=Low, 3=Close, 4=Volume
     price_indices = [0, 1, 2, 3]  # OHLC
     
-    # Денормализация цен через лог-доходности
+    # Денормализация цен (O, H, L, C) через лог-доходности
     for i in price_indices:
-        # Получаем первую цену для восстановления
-        first_price = stats.get(f'first_price_{i}', 1.0)
+        # Получаем статистики для денормализации
+        first_log_price = stats.get(f'first_log_price_{i}', 0.0)  # Это ln(P_0)
+        log_return_mean = stats.get(f'log_return_mean_{i}', 0.0)
+        log_return_std = stats.get(f'log_return_std_{i}', 1.0)
         
-        # Восстанавливаем цены из лог-доходностей
+        # Денормализуем лог-доходности: r_denorm = r_norm * std + mean
         log_returns = denorm_history[:, i]
-        prices = np.zeros_like(log_returns)
-        prices[0] = first_price
+        if i == 0:  # Для первой точки это ln(P_0), остальные - доходности
+            denorm_log_returns = np.copy(log_returns)
+            denorm_log_returns[1:] = log_returns[1:] * log_return_std + log_return_mean
+        else:
+            denorm_log_returns = log_returns * log_return_std + log_return_mean
+            # Первая точка - это ln(P_0)
+            denorm_log_returns[0] = first_log_price
+            
+        # Восстанавливаем цены из лог-доходностей
+        prices = np.zeros_like(denorm_log_returns)
+        prices[0] = np.exp(first_log_price)  # P_0 = exp(ln(P_0))
         
         # Последовательное восстановление цен
-        for t in range(1, len(log_returns)):
+        for t in range(1, len(denorm_log_returns)):
             # P_t = P_{t-1} * exp(r_t)
-            prices[t] = prices[t-1] * np.exp(log_returns[t])
+            prices[t] = prices[t-1] * np.exp(denorm_log_returns[t])
             
         denorm_history[:, i] = prices
     
     # Денормализация таргета (цены закрытия)
-    first_close_price = stats.get('first_price_3', 1.0)
+    # Используем те же статистики, что и для исторических данных цены закрытия
+    first_log_price = stats.get('first_log_price_3', 0.0)
+    log_return_mean = stats.get('log_return_mean_3', 0.0)
+    log_return_std = stats.get('log_return_std_3', 1.0)
     
-    # Для таргета нам нужно продолжить последовательность от последней цены в истории
-    last_close_price = denorm_history[-1, 3]  # Последняя цена закрытия в истории
+    # Для таргета денормализуем лог-доходности
     target_log_returns = denorm_target[:, 0]
-    target_prices = np.zeros_like(target_log_returns)
-    target_prices[0] = last_close_price * np.exp(target_log_returns[0])
+    denorm_target_log_returns = target_log_returns * log_return_std + log_return_mean
     
-    for t in range(1, len(target_log_returns)):
-        target_prices[t] = target_prices[t-1] * np.exp(target_log_returns[t])
+    # Восстанавливаем цены таргета
+    target_prices = np.zeros_like(denorm_target_log_returns)
+    
+    # Начинаем с последней цены в денормализованной истории
+    last_history_price = denorm_history[-1, 3]  # Последняя цена закрытия в истории
+    
+    # Первую цену таргета вычисляем из последней цены истории и первой доходности таргета
+    target_prices[0] = last_history_price * np.exp(denorm_target_log_returns[0])
+    
+    # Последовательное восстановление остальных цен таргета
+    for t in range(1, len(denorm_target_log_returns)):
+        target_prices[t] = target_prices[t-1] * np.exp(denorm_target_log_returns[t])
         
     denorm_target[:, 0] = target_prices
     
