@@ -296,3 +296,45 @@ def denormalize_sample(history, target, stats):
     denorm_history[:, 4] = denorm_history[:, 4] * volume_std + volume_mean
     
     return denorm_history, denorm_target
+
+
+
+def plot_model_prediction_denormalized(history, target, stats, predict):
+    # Если данные в формате torch.Tensor, конвертируем в numpy
+    if hasattr(history, 'numpy'):
+        history = history.squeeze(0).numpy()
+    if hasattr(target, 'numpy'):
+        target = target.squeeze(0).numpy()
+    if hasattr(predict, 'numpy'):
+        predict = predict.squeeze(0).detach().cpu().numpy()
+
+    # Денормализация
+    denorm_history, denorm_target = denormalize_sample(history, target, stats)
+    _, denorm_predict = denormalize_sample(history, predict, stats)
+
+    # Создаем временную шкалу
+    history_len = denorm_history.shape[0]
+    target_len = denorm_target.shape[0]
+    history_time = np.arange(history_len)
+    target_time = np.arange(history_len, history_len + target_len)
+
+    # Создаем график
+    plt.figure(figsize=(12, 6))
+    
+    # Отрисовка исторических данных (цены закрытия)
+    plt.plot(history_time, denorm_history[:, 3], label='Historical Close Price', color='black', linewidth=1)
+    
+    # Отрисовка таргета (цены закрытия)
+    plt.plot(target_time, denorm_target[:, 0], label='Target Close Price', color='darkgreen', linewidth=1)
+    plt.plot(target_time, denorm_predict[:, 0], label='Predict Close Price', color='darkred', linewidth=1)
+    
+    # Настройка графика
+    plt.title(f'Denormalized Price Predict')
+    plt.xlabel('Time Steps')
+    plt.ylabel('Price')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    
+    # Показываем график
+    plt.tight_layout()
+    plt.show()
